@@ -1,0 +1,8 @@
+server.log
+*.o
+myserver
+images/*
+!images/.gitkeep
+mongo-cxx-driver-*/
+.DS_Store
+__MACOSX/

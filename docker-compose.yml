@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo
+    container_name: mongodb
+    ports:
+      - "27017:27017"
+    networks:
+      - mynetwork
+    environment:
+    MONGO_INITDB_ROOT_USERNAME: root
+    MONGO_INITDB_ROOT_PASSWORD: example
+
+  myapp:
+    build: .
+    container_name: my-mongo
+    depends_on:
+      - mongodb
+    ports:
+      - "8080:8080"
+      - "9002:80"
+      - "9003:8081"
+    networks:
+      - mynetwork
+
+networks:
+  mynetwork:
