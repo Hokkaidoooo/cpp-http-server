@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="640" viewBox="0 0 1200 640" role="img" aria-labelledby="title desc">
+  <title id="title">C++ HTTP 服务器</title>
+  <desc id="desc">epoll 事件循环、线程池、路由与 MongoDB：从零实现的 HTTP 服务器，附容器化部署。</desc>
+  <defs>
+    <pattern id="g" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M40 0H0V40" fill="none" stroke="#ffffff" stroke-opacity=".045"/></pattern>
+    <style>
+      text{font-family:"Segoe UI","Microsoft YaHei","Noto Sans CJK SC",sans-serif}
+      .mono{font-family:"Cascadia Code",Consolas,monospace}
+    </style>
+  </defs>
+  <rect width="1200" height="640" rx="20" fill="#101b20"/>
+  <rect width="1200" height="640" rx="20" fill="url(#g)"/>
+  <g transform="translate(56 44)">
+    <rect width="36" height="36" rx="8" fill="#e2bd7a"/>
+    <path d="M11 10l8 8-8 8M21 26h6" fill="none" stroke="#101b20" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="50" y="24" class="mono" fill="#eef1e8" font-size="17" letter-spacing="2">CPP / SERVER</text>
+  </g>
+  <text x="1144" y="68" text-anchor="end" class="mono" fill="#8fa3a8" font-size="13" letter-spacing="1.5">EPOLL / THREADS / MONGODB / NGINX</text>
+  <text x="56" y="196" fill="#f0f4e9" font-size="58" font-weight="700" letter-spacing="-1">C++ HTTP 服务器<tspan fill="#e2bd7a">。</tspan></text>
+  <text x="59" y="242" class="mono" fill="#e2bd7a" font-size="22" letter-spacing="1">cpp-http-server</text>
+  <text x="59" y="292" fill="#a9bcb6" font-size="19">从零实现：epoll 事件循环、线程池、路由与图片上传</text>
+  <text x="59" y="372" class="mono" fill="#8fa3a8" font-size="12" letter-spacing="2">REQUEST PIPELINE</text>
+  <g>
+    <rect x="56" y="400" width="190" height="76" rx="10" fill="#18262c" stroke="#40565f"/>
+    <rect x="276" y="400" width="190" height="76" rx="10" fill="#18262c" stroke="#40565f"/>
+    <rect x="496" y="400" width="190" height="76" rx="10" fill="#18262c" stroke="#40565f"/>
+    <rect x="716" y="400" width="190" height="76" rx="10" fill="#18262c" stroke="#40565f"/>
+    <rect x="936" y="400" width="190" height="76" rx="10" fill="#18262c" stroke="#e2bd7a"/>
+  </g>
+  <g fill="#e8ede6" font-size="19" text-anchor="middle">
+    <text x="151" y="433">客户端</text>
+    <text x="371" y="433">epoll 事件循环</text>
+    <text x="591" y="433">线程池</text>
+    <text x="811" y="433">路由</text>
+    <text x="1031" y="433">MongoDB</text>
+  </g>
+  <g fill="#8fa3a8" class="mono" font-size="11" text-anchor="middle">
+    <text x="151" y="459">browser</text>
+    <text x="371" y="459">accept / read / write</text>
+    <text x="591" y="459">worker threads</text>
+    <text x="811" y="459">/login /upload</text>
+    <text x="1031" y="459">users / images</text>
+  </g>
+  <g fill="none" stroke="#c9a86b" stroke-width="1.6">
+    <path d="M250 438h20m-5-4 5 4-5 4"/>
+    <path d="M470 438h20m-5-4 5 4-5 4"/>
+    <path d="M690 438h20m-5-4 5 4-5 4"/>
+    <path d="M910 438h20m-5-4 5 4-5 4"/>
+  </g>
+  <text x="56" y="612" class="mono" fill="#8fa3a8" font-size="11" letter-spacing="1.2">LINUX / C++17 / DOCKER COMPOSE</text>
+  <text x="1144" y="612" text-anchor="end" fill="#a9bcb6" font-size="12">单进程 8080，四类 HTTP 接口。</text>
+</svg>
