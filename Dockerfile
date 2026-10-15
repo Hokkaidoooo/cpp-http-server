@@ -1,32 +1,32 @@
-# 使用特定版本的Ubuntu镜像
-FROM ubuntu:latest
+FROM ubuntu:22.04 AS build
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    g++ cmake ninja-build curl ca-certificates pkg-config libsodium-dev libpng-dev libssl-dev libsasl2-dev \
+    && rm -rf /var/lib/apt/lists/*
+COPY scripts/install-mongo-drivers.sh /tmp/install-mongo-drivers.sh
+RUN bash /tmp/install-mongo-drivers.sh /opt/mongo
+ENV PKG_CONFIG_PATH=/opt/mongo/lib/pkgconfig
+ENV LD_LIBRARY_PATH=/opt/mongo/lib
+WORKDIR /source
+COPY . .
+RUN cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release \
+    && cmake --build build --parallel 2 && ctest --test-dir build --output-on-failure
 
-# 替换为清华大学的 Ubuntu 镜像源
-RUN sed -i 's/http:\/\/ports.ubuntu.com/http:\/\/mirrors.tuna.tsinghua.edu.cn/g' /etc/apt/sources.list
-
-# 更新软件包并安装所需的库
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends build-essential python3 python3-pip libsqlite3-dev nginx && \
-    rm -rf /var/lib/apt/lists/*
-
-# 配置 Nginx (假设您已经创建了 nginx.conf 并放在与 Dockerfile 相同的目录下)
-COPY nginx.conf /etc/nginx/nginx.conf
-
-# 复制代码到容器中
-COPY . /usr/src/myapp
-
-# 设置工作目录
-WORKDIR /usr/src/myapp
-
-# # 编译程序 (确保您的编译命令适用于您的项目)
-# RUN g++ -o myserver10 main.cpp -lsqlite3
-
-# 暴露端口（Nginx 和您的应用程序）
-EXPOSE 80 8080 8081
-
-# 创建并复制启动脚本到容器
-COPY start.sh /start.sh
-RUN chmod +x /start.sh
-
-# 启动脚本将运行 Nginx 和您的应用程序
-CMD ["/start.sh"]
+FROM ubuntu:22.04
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates libsodium23 libpng16-16 libssl3 libsasl2-2 libsnappy1v5 libzstd1 zlib1g \
+    && rm -rf /var/lib/apt/lists/* \
+    && useradd --uid 10001 --create-home app \
+    && mkdir -p /var/lib/cpp-http/images && chown -R 10001:10001 /var/lib/cpp-http
+COPY --from=build /opt/mongo/lib /opt/mongo/lib
+COPY --from=build /source/build/myserver /app/myserver
+COPY UI /app/UI
+COPY start.sh /app/start.sh
+RUN chmod 0555 /app/start.sh
+ENV LD_LIBRARY_PATH=/opt/mongo/lib
+ENV APP_ROOT=/app
+ENV STORAGE_ROOT=/var/lib/cpp-http/images
+ENV BIND_ADDRESS=0.0.0.0
+WORKDIR /app
+USER 10001:10001
+EXPOSE 8080
+ENTRYPOINT ["/app/start.sh"]

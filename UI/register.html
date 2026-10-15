@@ -1,14 +1,17 @@
 <!DOCTYPE html>
-<html>
+<html lang="zh-CN">
 <head>
-    <title>Register</title>
+    <meta charset="UTF-8">
+    <title>注册</title>
 </head>
 <body>
-    <h2>Register Form</h2>
+    <h1>注册</h1>
+    <p>用户名使用 3 至 32 位英文字母、数字、下划线或连字符；密码至少 12 位。</p>
     <form action="/register" method="post">
-        Username: <input type="text" name="username"><br>
-        Password: <input type="password" name="password"><br>
-        <input type="submit" value="Register">
+        <label>用户名：<input type="text" name="username" autocomplete="username" pattern="[A-Za-z0-9_-]{3,32}" required></label><br>
+        <label>密码：<input type="password" name="password" autocomplete="new-password" minlength="12" maxlength="128" required></label><br>
+        <input type="submit" value="注册">
     </form>
+    <p><a href="/login">已有账号，前往登录</a></p>
 </body>
 </html>

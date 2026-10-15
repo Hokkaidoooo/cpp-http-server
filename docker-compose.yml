@@ -1,28 +1,35 @@
-version: '3.8'
-
 services:
   mongodb:
-    image: mongo
-    container_name: mongodb
-    ports:
-      - "27017:27017"
-    networks:
-      - mynetwork
+    image: mongo:7.0.16
     environment:
-    MONGO_INITDB_ROOT_USERNAME: root
-    MONGO_INITDB_ROOT_PASSWORD: example
-
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USERNAME:?请设置 MONGO_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD:?请设置仅含 URI 未保留字符的随机 MONGO_PASSWORD}
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - >-
+          mongosh --quiet --username "$$MONGO_INITDB_ROOT_USERNAME"
+          --password "$$MONGO_INITDB_ROOT_PASSWORD" --authenticationDatabase admin
+          --eval 'quit(db.adminCommand({ping:1}).ok ? 0 : 1)'
+      interval: 5s
+      timeout: 5s
+      retries: 20
   myapp:
     build: .
-    container_name: my-mongo
     depends_on:
-      - mongodb
+      mongodb:
+        condition: service_healthy
+    environment:
+      MONGODB_URI: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@mongodb:27017/?authSource=admin&serverSelectionTimeoutMS=2000&connectTimeoutMS=2000&socketTimeoutMS=2000&maxPoolSize=8&waitQueueTimeoutMS=2000
+      MONGODB_DATABASE: cpp_http
+      SESSION_COOKIE_SECURE: "0"
+      PUBLIC_ORIGIN: http://localhost:8080
     ports:
-      - "8080:8080"
-      - "9002:80"
-      - "9003:8081"
-    networks:
-      - mynetwork
-
-networks:
-  mynetwork:
+      - "127.0.0.1:8080:8080"
+    volumes:
+      - image-data:/var/lib/cpp-http/images
+volumes:
+  mongo-data:
+  image-data:

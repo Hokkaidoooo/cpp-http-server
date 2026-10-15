@@ -6,3 +6,8 @@ images/*
 mongo-cxx-driver-*/
 .DS_Store
 __MACOSX/
+build/
+.deps/
+__pycache__/
+*.pyc
+.env

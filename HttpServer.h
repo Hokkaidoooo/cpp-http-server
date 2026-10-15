@@ -69,7 +69,7 @@ private:
         Clock::time_point progress = Clock::now();
         std::string response;
         std::size_t sent = 0;
-        Connection(int fd, HttpLimits limits) : fd(fd), request(limits) {}
+        Connection(UniqueFd fd, HttpLimits limits) : fd(std::move(fd)), request(limits) {}
     };
     struct Completion { std::uint64_t token; std::string response; };
     static constexpr std::uint64_t listenToken = 1, wakeToken = 2;
@@ -101,7 +101,7 @@ private:
             if (nextToken_ == std::numeric_limits<std::uint64_t>::max()) throw std::runtime_error("连接标识已耗尽");
             const auto token = nextToken_++;
             control(EPOLL_CTL_ADD, fd.get(), EPOLLIN | EPOLLRDHUP | EPOLLET | EPOLLONESHOT, token);
-            connections_.try_emplace(token, fd.release(), config_.httpLimits());
+            connections_.try_emplace(token, std::move(fd), config_.httpLimits());
             maxActive_ = std::max(maxActive_, connections_.size());
         }
     }

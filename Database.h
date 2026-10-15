@@ -43,7 +43,8 @@ public:
         if (!record) return std::nullopt;
         const auto value = record->view()["password_hash"];
         if (!value || value.type() != bsoncxx::type::k_utf8) throw std::runtime_error("用户密码哈希缺失或类型错误");
-        return std::string(value.get_string().value);
+        const auto text = value.get_string().value;
+        return std::string(text.data(), text.size());
     }
 private:
     mongocxx::pool pool_;

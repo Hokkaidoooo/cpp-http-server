@@ -4,6 +4,7 @@
 #include "Posix.h"
 #include <algorithm>
 #include <array>
+#include <cstdint>
 #include <dirent.h>
 #include <fcntl.h>
 #include <iostream>
@@ -160,7 +161,8 @@ private:
             const auto* entry = ::readdir(entries.get());
             if (!entry) { if (errno) throw systemFailure("遍历图片目录失败"); break; }
             const std::string name = entry->d_name;
-            if (name == "." || name == ".." || (name.rfind(".upload-", 0) == 0 && name.size() == 77 && name.substr(72) == ".part")) continue;
+            if (name == "." || name == ".." || (name.rfind(".upload-", 0) == 0 && name.size() == 77 &&
+                validId(name.substr(8, 64)) && name.substr(72) == ".part")) continue;
             if (name.size() != 70 || name.substr(64) != ".asset" || !validId(name.substr(0, 64)))
                 throw std::runtime_error("图片目录含有无法识别的记录，未删除该文件");
             result.push_back(name);
@@ -199,7 +201,7 @@ private:
         }
     }
     ImageRecord readRecord(int directory, const std::string& name, bool withBytes) const {
-        UniqueFd input(::openat(directory, name.c_str(), O_RDONLY | O_NOFOLLOW | O_CLOEXEC));
+        UniqueFd input(::openat(directory, name.c_str(), O_RDONLY | O_NOFOLLOW | O_NONBLOCK | O_CLOEXEC));
         if (input.get() < 0) { if (errno == ENOENT) throw HttpError(404, "图片不存在"); throw systemFailure("打开图片记录失败"); }
         struct stat info{};
         if (::fstat(input.get(), &info) < 0) throw systemFailure("读取图片记录属性失败");

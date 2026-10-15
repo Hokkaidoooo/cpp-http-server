@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <title>Upload Image</title>
+    <title>上传图片</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -43,10 +43,16 @@
     </style>
 </head>
 <body>
-    <form action="/upload" method="post" enctype="multipart/form-data">
-        <input type="file" name="file" required>
-        <input type="text" name="description" placeholder="Description">
-        <input type="submit" value="Upload">
-    </form>
+    <main>
+        <h1>上传图片</h1>
+        <p>仅支持 PNG。文件名使用英文字母、数字、点、下划线或连字符，同名图片请更名后上传。</p>
+        <form action="/upload" method="post" enctype="multipart/form-data">
+            <label>选择图片<input type="file" name="file" accept="image/png,.png" required></label>
+            <label>图片说明<input type="text" name="description" maxlength="256" placeholder="为图片添加说明"></label>
+            <input type="submit" value="上传">
+        </form>
+        <p><a href="/images">查看图片列表</a></p>
+        <form action="/logout" method="post"><button type="submit">退出登录</button></form>
+    </main>
 </body>
 </html>
