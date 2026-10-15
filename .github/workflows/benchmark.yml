@@ -1,0 +1,87 @@
+name: 性能基准
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  bench:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 40
+    services:
+      mongodb:
+        image: mongo:7.0.16
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --quiet --eval 'quit(db.adminCommand({ping:1}).ok ? 0 : 1)'"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+    env:
+      PKG_CONFIG_PATH: ${{ github.workspace }}/.deps/lib/pkgconfig
+      LD_LIBRARY_PATH: ${{ github.workspace }}/.deps/lib
+      MONGODB_URI: mongodb://127.0.0.1:27017/?serverSelectionTimeoutMS=2000&connectTimeoutMS=2000&socketTimeoutMS=2000&maxPoolSize=8&waitQueueTimeoutMS=2000
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+      - name: 安装编译依赖
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y g++ cmake ninja-build curl pkg-config libsodium-dev libpng-dev libssl-dev libsasl2-dev
+      - name: 缓存固定版本 MongoDB 驱动
+        id: drivers
+        uses: actions/cache@v4
+        with:
+          path: .deps
+          key: ubuntu22-mongo-c1.25.4-cxx3.9.0-${{ hashFiles('scripts/install-mongo-drivers.sh') }}
+      - name: 编译 MongoDB 驱动
+        if: steps.drivers.outputs.cache-hit != 'true'
+        run: bash scripts/install-mongo-drivers.sh "$GITHUB_WORKSPACE/.deps"
+      - name: 安装负载生成器
+        run: |
+          go install github.com/rakyll/hey@v0.1.4
+          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
+      - name: Release 构建
+        run: |
+          cmake -S . -B build-rel -G Ninja -DCMAKE_BUILD_TYPE=Release
+          cmake --build build-rel --parallel 2
+      - name: 基准脚本离线单测
+        run: python3 -m unittest discover -s bench -p "test_*.py"
+      - name: 记录运行环境
+        run: |
+          uname -a
+          nproc
+          grep -m1 'model name' /proc/cpuinfo
+          hey -h 2>&1 | head -1 || true
+      - name: 运行基准
+        run: |
+          python3 bench/run_bench.py \
+            --binary build-rel/myserver \
+            --env "MONGODB_URI=$MONGODB_URI" \
+            --env MONGODB_DATABASE=cpp_http_bench \
+            --env SESSION_COOKIE_SECURE=0 \
+            --env PUBLIC_ORIGIN=http://127.0.0.1:18080 \
+            --expect-metrics \
+            --out-json bench/results/bench.json \
+            --out-md bench/results/bench.md
+      - name: 写入 job 摘要
+        if: always()
+        run: |
+          if [ -f bench/results/bench.md ]; then cat bench/results/bench.md >> "$GITHUB_STEP_SUMMARY"; fi
+      - name: 上传结果与服务器日志
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bench-results
+          path: |
+            bench/results/bench.json
+            bench/results/bench.md
+            build-bench/*.log
+          if-no-files-found: warn
