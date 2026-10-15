@@ -1,0 +1,766 @@
+{
+  "generated_at": "2026-10-15T08:40:33Z",
+  "commit": "ffabb3d9e4cbe4760a38925ae9502e2d6a48170c",
+  "environment": {
+    "cpu_count": 4,
+    "platform": "Linux-6.8.0-1064-azure-x86_64-with-glibc2.35",
+    "python": "3.10.12",
+    "hey_command": "hey"
+  },
+  "loadgen": "hey",
+  "requests_per_run": 12000,
+  "reps": 3,
+  "focus": {
+    "workers": 4,
+    "concurrency": 64
+  },
+  "server": {
+    "binary": "build-rel/myserver",
+    "worker_sweep": [
+      {
+        "label": "workers=1 concurrency=64",
+        "workers": 1,
+        "concurrency": 64,
+        "requests_per_run": 11968,
+        "listening": {
+          "port": "18080",
+          "workers": "1",
+          "queue": "64"
+        },
+        "summary": {
+          "runs": 3,
+          "rps_median": 13787.8748,
+          "rps_min": 13292.7871,
+          "rps_max": 14013.3788,
+          "p50_ms_median": 4.2,
+          "p99_ms_median": 10.5,
+          "p99_ms_max": 10.7,
+          "responses_total": 35904,
+          "error_total": 0,
+          "status_total": {
+            "200": 35904
+          }
+        },
+        "runs": [
+          {
+            "rps": 13292.7871,
+            "total_secs": 0.9003,
+            "p50_ms": 4.3,
+            "p99_ms": 10.5,
+            "latency": {
+              "10": 2.7,
+              "25": 3.5,
+              "50": 4.3,
+              "75": 5.6,
+              "90": 7.2,
+              "95": 8.200000000000001,
+              "99": 10.5
+            },
+            "status": {
+              "200": 11968
+            },
+            "errors": {}
+          },
+          {
+            "rps": 13787.8748,
+            "total_secs": 0.868,
+            "p50_ms": 4.2,
+            "p99_ms": 10.1,
+            "latency": {
+              "10": 2.6,
+              "25": 3.4,
+              "50": 4.2,
+              "75": 5.3,
+              "90": 7.0,
+              "95": 8.1,
+              "99": 10.1
+            },
+            "status": {
+              "200": 11968
+            },
+            "errors": {}
+          },
+          {
+            "rps": 14013.3788,
+            "total_secs": 0.854,
+            "p50_ms": 4.0,
+            "p99_ms": 10.7,
+            "latency": {
+              "10": 2.2,
+              "25": 3.1,
+              "50": 4.0,
+              "75": 5.4,
+              "90": 7.0,
+              "95": 8.1,
+              "99": 10.7
+            },
+            "status": {
+              "200": 11968
+            },
+            "errors": {}
+          }
+        ]
+      },
+      {
+        "label": "workers=2 concurrency=64",
+        "workers": 2,
+        "concurrency": 64,
+        "requests_per_run": 11968,
+        "listening": {
+          "port": "18080",
+          "workers": "2",
+          "queue": "64"
+        },
+        "summary": {
+          "runs": 3,
+          "rps_median": 13420.7001,
+          "rps_min": 10874.7634,
+          "rps_max": 13474.6848,
+          "p50_ms_median": 4.4,
+          "p99_ms_median": 9.799999999999999,
+          "p99_ms_max": 13.4,
+          "responses_total": 35904,
+          "error_total": 0,
+          "status_total": {
+            "200": 35904
+          }
+        },
+        "runs": [
+          {
+            "rps": 10874.7634,
+            "total_secs": 1.1005,
+            "p50_ms": 5.3,
+            "p99_ms": 13.4,
+            "latency": {
+              "10": 3.2,
+              "25": 4.2,
+              "50": 5.3,
+              "75": 6.8,
+              "90": 8.8,
+              "95": 10.1,
+              "99": 13.4
+            },
+            "status": {
+              "200": 11968
+            },
+            "errors": {}
+          },
+          {
+            "rps": 13474.6848,
+            "total_secs": 0.8882,
+            "p50_ms": 4.4,
+            "p99_ms": 9.799999999999999,
+            "latency": {
+              "10": 2.5,
+              "25": 3.5,
+              "50": 4.4,
+              "75": 5.5,
+              "90": 7.0,
+              "95": 7.9,
+              "99": 9.799999999999999
+            },
+            "status": {
+              "200": 11968
+            },
+            "errors": {}
+          },
+          {
+            "rps": 13420.7001,
+            "total_secs": 0.8918,
+            "p50_ms": 4.4,
+            "p99_ms": 9.799999999999999,
+            "latency": {
+              "10": 2.5,
+              "25": 3.5,
+              "50": 4.4,
+              "75": 5.5,
+              "90": 7.0,
+              "95": 8.0,
+              "99": 9.799999999999999
+            },
+            "status": {
+              "200": 11968
+            },
+            "errors": {}
+          }
+        ]
+      },
+      {
+        "label": "workers=4 concurrency=64",
+        "workers": 4,
+        "concurrency": 64,
+        "requests_per_run": 11968,
+        "listening": {
+          "port": "18080",
+          "workers": "4",
+          "queue": "64"
+        },
+        "summary": {
+          "runs": 3,
+          "rps_median": 12409.2683,
+          "rps_min": 12398.3248,
+          "rps_max": 12418.9788,
+          "p50_ms_median": 4.8999999999999995,
+          "p99_ms_median": 9.799999999999999,
+          "p99_ms_max": 10.4,
+          "responses_total": 35904,
+          "error_total": 0,
+          "status_total": {
+            "200": 35904
+          }
+        },
+        "runs": [
+          {
+            "rps": 12409.2683,
+            "total_secs": 0.9644,
+            "p50_ms": 4.8999999999999995,
+            "p99_ms": 10.4,
+            "latency": {
+              "10": 3.1,
+              "25": 4.1000000000000005,
+              "50": 4.8999999999999995,
+              "75": 5.8,
+              "90": 7.0,
+              "95": 8.0,
+              "99": 10.4
+            },
+            "status": {
+              "200": 11968
+            },
+            "errors": {}
+          },
+          {
+            "rps": 12418.9788,
+            "total_secs": 0.9637,
+            "p50_ms": 4.8999999999999995,
+            "p99_ms": 9.799999999999999,
+            "latency": {
+              "10": 3.3,
+              "25": 4.2,
+              "50": 4.8999999999999995,
+              "75": 5.8,
+              "90": 7.0,
+              "95": 7.8,
+              "99": 9.799999999999999
+            },
+            "status": {
+              "200": 11968
+            },
+            "errors": {}
+          },
+          {
+            "rps": 12398.3248,
+            "total_secs": 0.9653,
+            "p50_ms": 4.8999999999999995,
+            "p99_ms": 9.6,
+            "latency": {
+              "10": 3.6,
+              "25": 4.3,
+              "50": 4.8999999999999995,
+              "75": 5.7,
+              "90": 6.8,
+              "95": 7.6,
+              "99": 9.6
+            },
+            "status": {
+              "200": 11968
+            },
+            "errors": {}
+          }
+        ]
+      },
+      {
+        "label": "workers=8 concurrency=64",
+        "workers": 8,
+        "concurrency": 64,
+        "requests_per_run": 11968,
+        "listening": {
+          "port": "18080",
+          "workers": "8",
+          "queue": "64"
+        },
+        "summary": {
+          "runs": 3,
+          "rps_median": 12220.9911,
+          "rps_min": 12177.8653,
+          "rps_max": 12248.7216,
+          "p50_ms_median": 5.0,
+          "p99_ms_median": 9.9,
+          "p99_ms_max": 10.6,
+          "responses_total": 35904,
+          "error_total": 0,
+          "status_total": {
+            "200": 35904
+          }
+        },
+        "runs": [
+          {
+            "rps": 12248.7216,
+            "total_secs": 0.9771,
+            "p50_ms": 5.0,
+            "p99_ms": 9.299999999999999,
+            "latency": {
+              "10": 3.6,
+              "25": 4.4,
+              "50": 5.0,
+              "75": 5.8,
+              "90": 6.8999999999999995,
+              "95": 7.7,
+              "99": 9.299999999999999
+            },
+            "status": {
+              "200": 11968
+            },
+            "errors": {}
+          },
+          {
+            "rps": 12177.8653,
+            "total_secs": 0.9828,
+            "p50_ms": 5.0,
+            "p99_ms": 9.9,
+            "latency": {
+              "10": 3.5,
+              "25": 4.3,
+              "50": 5.0,
+              "75": 5.8,
+              "90": 6.8,
+              "95": 7.8,
+              "99": 9.9
+            },
+            "status": {
+              "200": 11968
+            },
+            "errors": {}
+          },
+          {
+            "rps": 12220.9911,
+            "total_secs": 0.9793,
+            "p50_ms": 5.0,
+            "p99_ms": 10.6,
+            "latency": {
+              "10": 3.1,
+              "25": 4.3,
+              "50": 5.0,
+              "75": 5.8,
+              "90": 7.0,
+              "95": 8.1,
+              "99": 10.6
+            },
+            "status": {
+              "200": 11968
+            },
+            "errors": {}
+          }
+        ]
+      }
+    ],
+    "concurrency_sweep": [
+      {
+        "label": "workers=4 concurrency=1",
+        "workers": 4,
+        "concurrency": 1,
+        "requests_per_run": 12000,
+        "listening": {
+          "port": "18080",
+          "workers": "4",
+          "queue": "64"
+        },
+        "summary": {
+          "runs": 3,
+          "rps_median": 3207.8291,
+          "rps_min": 3150.8855,
+          "rps_max": 3277.3193,
+          "p50_ms_median": 0.3,
+          "p99_ms_median": 0.5,
+          "p99_ms_max": 0.6,
+          "responses_total": 36000,
+          "error_total": 0,
+          "status_total": {
+            "200": 36000
+          }
+        },
+        "runs": [
+          {
+            "rps": 3150.8855,
+            "total_secs": 3.8085,
+            "p50_ms": 0.3,
+            "p99_ms": 0.6,
+            "latency": {
+              "10": 0.3,
+              "25": 0.3,
+              "50": 0.3,
+              "75": 0.3,
+              "90": 0.4,
+              "95": 0.4,
+              "99": 0.6
+            },
+            "status": {
+              "200": 12000
+            },
+            "errors": {}
+          },
+          {
+            "rps": 3277.3193,
+            "total_secs": 3.6615,
+            "p50_ms": 0.3,
+            "p99_ms": 0.4,
+            "latency": {
+              "10": 0.3,
+              "25": 0.3,
+              "50": 0.3,
+              "75": 0.3,
+              "90": 0.3,
+              "95": 0.3,
+              "99": 0.4
+            },
+            "status": {
+              "200": 12000
+            },
+            "errors": {}
+          },
+          {
+            "rps": 3207.8291,
+            "total_secs": 3.7408,
+            "p50_ms": 0.3,
+            "p99_ms": 0.5,
+            "latency": {
+              "10": 0.3,
+              "25": 0.3,
+              "50": 0.3,
+              "75": 0.3,
+              "90": 0.3,
+              "95": 0.4,
+              "99": 0.5
+            },
+            "status": {
+              "200": 12000
+            },
+            "errors": {}
+          }
+        ]
+      },
+      {
+        "label": "workers=4 concurrency=16",
+        "workers": 4,
+        "concurrency": 16,
+        "requests_per_run": 12000,
+        "listening": {
+          "port": "18080",
+          "workers": "4",
+          "queue": "64"
+        },
+        "summary": {
+          "runs": 3,
+          "rps_median": 11061.3311,
+          "rps_min": 9580.9503,
+          "rps_max": 11158.6029,
+          "p50_ms_median": 1.4,
+          "p99_ms_median": 3.2,
+          "p99_ms_max": 3.9,
+          "responses_total": 36000,
+          "error_total": 0,
+          "status_total": {
+            "200": 36000
+          }
+        },
+        "runs": [
+          {
+            "rps": 11158.6029,
+            "total_secs": 1.0754,
+            "p50_ms": 1.3,
+            "p99_ms": 3.2,
+            "latency": {
+              "10": 0.9,
+              "25": 1.1,
+              "50": 1.3,
+              "75": 1.6,
+              "90": 2.0,
+              "95": 2.4,
+              "99": 3.2
+            },
+            "status": {
+              "200": 12000
+            },
+            "errors": {}
+          },
+          {
+            "rps": 11061.3311,
+            "total_secs": 1.0849,
+            "p50_ms": 1.4,
+            "p99_ms": 2.8,
+            "latency": {
+              "10": 1.0,
+              "25": 1.2,
+              "50": 1.4,
+              "75": 1.6,
+              "90": 1.9,
+              "95": 2.2,
+              "99": 2.8
+            },
+            "status": {
+              "200": 12000
+            },
+            "errors": {}
+          },
+          {
+            "rps": 9580.9503,
+            "total_secs": 1.2525,
+            "p50_ms": 1.5,
+            "p99_ms": 3.9,
+            "latency": {
+              "10": 1.1,
+              "25": 1.3,
+              "50": 1.5,
+              "75": 1.9,
+              "90": 2.4,
+              "95": 2.8,
+              "99": 3.9
+            },
+            "status": {
+              "200": 12000
+            },
+            "errors": {}
+          }
+        ]
+      },
+      {
+        "label": "workers=4 concurrency=64",
+        "workers": 4,
+        "concurrency": 64,
+        "requests_per_run": 11968,
+        "listening": {
+          "port": "18080",
+          "workers": "4",
+          "queue": "64"
+        },
+        "summary": {
+          "runs": 3,
+          "rps_median": 12409.2683,
+          "rps_min": 12398.3248,
+          "rps_max": 12418.9788,
+          "p50_ms_median": 4.8999999999999995,
+          "p99_ms_median": 9.799999999999999,
+          "p99_ms_max": 10.4,
+          "responses_total": 35904,
+          "error_total": 0,
+          "status_total": {
+            "200": 35904
+          }
+        },
+        "runs": [
+          {
+            "rps": 12409.2683,
+            "total_secs": 0.9644,
+            "p50_ms": 4.8999999999999995,
+            "p99_ms": 10.4,
+            "latency": {
+              "10": 3.1,
+              "25": 4.1000000000000005,
+              "50": 4.8999999999999995,
+              "75": 5.8,
+              "90": 7.0,
+              "95": 8.0,
+              "99": 10.4
+            },
+            "status": {
+              "200": 11968
+            },
+            "errors": {}
+          },
+          {
+            "rps": 12418.9788,
+            "total_secs": 0.9637,
+            "p50_ms": 4.8999999999999995,
+            "p99_ms": 9.799999999999999,
+            "latency": {
+              "10": 3.3,
+              "25": 4.2,
+              "50": 4.8999999999999995,
+              "75": 5.8,
+              "90": 7.0,
+              "95": 7.8,
+              "99": 9.799999999999999
+            },
+            "status": {
+              "200": 11968
+            },
+            "errors": {}
+          },
+          {
+            "rps": 12398.3248,
+            "total_secs": 0.9653,
+            "p50_ms": 4.8999999999999995,
+            "p99_ms": 9.6,
+            "latency": {
+              "10": 3.6,
+              "25": 4.3,
+              "50": 4.8999999999999995,
+              "75": 5.7,
+              "90": 6.8,
+              "95": 7.6,
+              "99": 9.6
+            },
+            "status": {
+              "200": 11968
+            },
+            "errors": {}
+          }
+        ]
+      },
+      {
+        "label": "workers=4 concurrency=128",
+        "workers": 4,
+        "concurrency": 128,
+        "requests_per_run": 11904,
+        "listening": {
+          "port": "18080",
+          "workers": "4",
+          "queue": "64"
+        },
+        "summary": {
+          "runs": 3,
+          "rps_median": 12701.5099,
+          "rps_min": 11004.8408,
+          "rps_max": 12886.4016,
+          "p50_ms_median": 9.6,
+          "p99_ms_median": 19.400000000000002,
+          "p99_ms_max": 24.9,
+          "responses_total": 35712,
+          "error_total": 0,
+          "status_total": {
+            "200": 35309,
+            "503": 403
+          }
+        },
+        "runs": [
+          {
+            "rps": 12701.5099,
+            "total_secs": 0.9372,
+            "p50_ms": 9.6,
+            "p99_ms": 19.3,
+            "latency": {
+              "10": 6.2,
+              "25": 7.9,
+              "50": 9.6,
+              "75": 11.299999999999999,
+              "90": 13.4,
+              "95": 15.5,
+              "99": 19.3
+            },
+            "status": {
+              "200": 11855,
+              "503": 49
+            },
+            "errors": {}
+          },
+          {
+            "rps": 12886.4016,
+            "total_secs": 0.9238,
+            "p50_ms": 9.299999999999999,
+            "p99_ms": 19.400000000000002,
+            "latency": {
+              "10": 6.2,
+              "25": 7.9,
+              "50": 9.299999999999999,
+              "75": 11.0,
+              "90": 13.2,
+              "95": 15.0,
+              "99": 19.400000000000002
+            },
+            "status": {
+              "200": 11685,
+              "503": 219
+            },
+            "errors": {}
+          },
+          {
+            "rps": 11004.8408,
+            "total_secs": 1.0817,
+            "p50_ms": 10.8,
+            "p99_ms": 24.9,
+            "latency": {
+              "10": 6.0,
+              "25": 8.6,
+              "50": 10.8,
+              "75": 13.799999999999999,
+              "90": 16.6,
+              "95": 18.8,
+              "99": 24.9
+            },
+            "status": {
+              "200": 11769,
+              "503": 135
+            },
+            "errors": {}
+          }
+        ]
+      }
+    ],
+    "metrics": [
+      {
+        "server_key": "w1",
+        "workers": 1,
+        "metrics": {
+          "accepted": 35905,
+          "closed": 35905,
+          "responses": 35905,
+          "dispatched": 35905,
+          "queue_rejected": 0,
+          "connection_rejected": 0,
+          "expired": 0,
+          "stale_completions": 0,
+          "max_active": 64,
+          "active": 0
+        }
+      },
+      {
+        "server_key": "w2",
+        "workers": 2,
+        "metrics": {
+          "accepted": 35905,
+          "closed": 35905,
+          "responses": 35905,
+          "dispatched": 35905,
+          "queue_rejected": 0,
+          "connection_rejected": 0,
+          "expired": 0,
+          "stale_completions": 0,
+          "max_active": 64,
+          "active": 0
+        }
+      },
+      {
+        "server_key": "w4",
+        "workers": 4,
+        "metrics": {
+          "accepted": 143617,
+          "closed": 143617,
+          "responses": 143617,
+          "dispatched": 143214,
+          "queue_rejected": 403,
+          "connection_rejected": 0,
+          "expired": 0,
+          "stale_completions": 0,
+          "max_active": 128,
+          "active": 0
+        }
+      },
+      {
+        "server_key": "w8",
+        "workers": 8,
+        "metrics": {
+          "accepted": 35905,
+          "closed": 35905,
+          "responses": 35905,
+          "dispatched": 35905,
+          "queue_rejected": 0,
+          "connection_rejected": 0,
+          "expired": 0,
+          "stale_completions": 0,
+          "max_active": 64,
+          "active": 0
+        }
+      }
+    ]
+  }
+}

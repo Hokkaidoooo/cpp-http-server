@@ -3,6 +3,12 @@ name: 性能基准
 on:
   push:
     branches: [main]
+    paths:
+      - 'bench/**'
+      - '*.h'
+      - '*.cpp'
+      - 'CMakeLists.txt'
+      - '.github/workflows/benchmark.yml'
   workflow_dispatch:
 
 permissions:
