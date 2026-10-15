@@ -6,12 +6,12 @@
 
 | 项目 | 已实现内容 | 完整验收状态 |
 | --- | --- | --- |
-| CP-01 | CMake、固定版本及 SHA-256 驱动安装、必填数据库配置、启动检查、Linux CI、容器配置整理 | Linux 驱动安装通过；应用头文件依赖修正后等待重跑；真实启动尚未验收 |
-| CP-02 | 一个增量状态机；独立 HTTP 字节序列测试；拒绝重复头、错误长度、超限与不支持传输 | 本地 5,172 项协议检查通过；等待真实 Linux HTTP 验收 |
-| CP-03 | epoll 独占连接；工作线程只持有请求和代号；有界队列；MongoDB 客户端池；超时与回收指标 | 等待线程池、并发、ASan/UBSan、TSan 真实回执及基线数字 |
-| CP-04 | Argon2id、会话与退出、统一访问控制、PNG 校验、个人隔离、原子单文件存储 | 等待真实注册/登录/退出、数据库记录、上传与读取验收 |
+| CP-01 | CMake、固定版本及 SHA-256 驱动安装、必填数据库配置、启动检查、Linux CI、容器配置整理 | Linux 真实构建、MongoDB 连接、GET / 与登录页面通过；错误配置明确失败 |
+| CP-02 | 一个增量状态机；独立 HTTP 字节序列测试；拒绝重复头、错误长度、超限与不支持传输 | 本地 5,172 项协议检查，以及 Linux 分段请求/超限/错误协议/断连验证通过 |
+| CP-03 | epoll 独占连接；工作线程只持有请求和代号；有界队列；MongoDB 客户端池；超时与回收指标 | 线程池、240 请求/12 并发、队列拒绝、fd 复用、ASan/UBSan 与 TSan 通过；退出 active=0 |
+| CP-04 | Argon2id、会话与退出、统一访问控制、PNG 校验、个人隔离、原子单文件存储 | 真实注册/登录/退出、密码哈希、合法 PNG 读回、未授权/越界/非法内容/超限/存储失败通过 |
 
-以上“已实现”不代表完整通过。未拿到的 Linux、数据库、资源回收与 Sanitizer 结果不填写成功。
+以上完成判断来自第三轮真实 CI 和两份原始集成报告；Docker、Compose、Nginx 的独立部署仍未实跑。
 
 ## 已取得的证据
 
@@ -34,6 +34,12 @@
 
 Python 集成脚本通过 AST 语法检查；`git diff --check` 通过。没有在本机安装 Docker、WSL 或 MongoDB，也没有更改系统配置。
 
+### 页面实际渲染
+
+使用已安装的 Playwright 1.56.1 与 headless Edge 120.0.2210.61，启动独立本机静态 HTTP 服务实际渲染登录、注册、上传页面，并检查 390 像素视口。三页的标题与表单可见，桌面及移动端无水平溢出；截图逐张检查完成，上传页面的移动端留白与 viewport 已修正并复跑。
+
+证据：[登录](validation/ui-login.png)、[注册](validation/ui-register.png)、[上传](validation/ui-upload.png)、[移动端上传](validation/ui-upload-mobile.png)。这些截图只证明页面布局，不证明服务认证；后者必须通过 Linux 真实 HTTP 集成测试。临时静态服务和浏览器进程已关闭。
+
 ### 驱动下载核验与首轮失败
 
 - 首轮提交 `a251ff9f374ce7b957c3cba442b93edab48b4880` 的 [CI 38672072936](https://github.com/Hokkaidoooo/cpp-http-server/actions/runs/38672072936) 中，两个 Sanitizer job 都在“编译 MongoDB 驱动”步骤失败，尚未运行应用构建和集成测试。
@@ -43,7 +49,7 @@ Python 集成脚本通过 AST 语法检查；`git diff --check` 通过。没有�
 - C SHA-256：`0ab3c5b238803b82a6b217d1ef21ea71a6e96251063322dc1038bea70a3da541`。
 - C++ SHA-256：`a5f0844ad6eb52747300a3905e35101b756edbce33629cf8b4baa1d36b426f98`。
 
-第二轮提交 `5c5c60e` 的 [CI 38673486432](https://github.com/Hokkaidoooo/cpp-http-server/actions/runs/38673486432) 已完成驱动编译安装和版本识别，进入真实 C++ 构建。在 `Database.h` 的三个客户端索引表达式处报 `no match for operator[]`：`pool.hpp` 只提供客户端前向声明，使用端缺少 `client.hpp`、`database.hpp`、`collection.hpp` 的完整类型声明。修正为直接包含所依赖的三个接口头文件，等待第三轮重跑。
+第二轮提交 `5c5c60e` 的 [CI 38673486432](https://github.com/Hokkaidoooo/cpp-http-server/actions/runs/38673486432) 已完成驱动编译安装和版本识别，进入真实 C++ 构建。在 `Database.h` 的三个客户端索引表达式处报 `no match for operator[]`：`pool.hpp` 只提供客户端前向声明，使用端缺少 `client.hpp`、`database.hpp`、`collection.hpp` 的完整类型声明。修正为直接包含所依赖的三个接口头文件；第三轮构建与集成验证已通过。
 
 已实际下载第二轮 address job 的 333,879 字节完整日志并定位上述编译错误。Actions 日志下载曾遭 TLS 握手超时；改用 HTTPS API 获取重定向、再不带 GitHub 凭据读取签名日志，未修改代理配置。首轮原始 curl 日志仍未取得，不作引用。
 
@@ -104,7 +110,14 @@ TSan job 在一次性 Linux runner 中把 `vm.mmap_rnd_bits` 设为 28，以提�
 
 报告保存：`build/integration-report.json`、`build/server.log`、`build/Testing/Temporary/LastTest.log`。CI 分别上传 `validation-address`、`validation-thread`。基线报告含请求数、并发数、错误数、平均/P50/P95/P99 延迟、运行前后 fd/线程/RSS、退出时 accepted/closed/active。
 
-目前尚无已通过的 Linux 基线，不填写推测数字，不宣称相较旧版提升了性能。
+第三轮 [CI 38674535136](https://github.com/Hokkaidoooo/cpp-http-server/actions/runs/38674535136)，提交 `ffd765fd2f37dd4a7a383c8af2303088f6cc6469`，两个矩阵均成功。主线独立下载并解析 artifact `11945289302`（address）和 `11945309162`（thread）：各运行 13 组集成测试，failures/errors/skipped/cleanup_errors 均为空，`passed=true`。
+
+| 模式 | 请求/并发 | 错误数 | 平均延迟 | P95 | fd 前/后 | 工作进程线程前/后 |
+| --- | --- | --- | --- | --- | --- | --- |
+| ASan + UBSan | 240 / 12 | 0 | 3.6824 ms | 6.9741 ms | 10 / 10 | 7 / 7 |
+| TSan | 240 / 12 | 0 | 5.0996 ms | 10.8501 ms | 10 / 10 | 8 / 8 |
+
+测量路由为 `GET /`，仅作为 Ubuntu 22.04 CI runner 上带检测器的基线，不声称相较旧版提升。两次主进程均接收并关闭 638 个连接，退出 active=0；96 并发注册分别有 73/76 次明确 503 拒绝。单独超时进程均接收并关闭 41 个连接，`stale_completions=1`，证明遗留任务回传被识别且未作用于复用连接。两份报告均确认临时目录清理成功。
 
 ## 保护与清理
 

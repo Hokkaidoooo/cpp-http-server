@@ -2,6 +2,7 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>上传图片</title>
     <style>
         body {
@@ -10,9 +11,13 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
+            min-height: 100vh;
             margin: 0;
+            padding: 16px;
+            box-sizing: border-box;
         }
+        main { width: 100%; max-width: 700px; }
+        p { line-height: 1.5; }
         form {
             background-color: white;
             padding: 20px;
