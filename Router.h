@@ -1,131 +1,87 @@
-#include "HttpRequest.h"
+#pragma once
+#include "Auth.h"
 #include "HttpResponse.h"
-#include "Database.h"
-#include <functional>
-#include <unordered_map>
-#include <future>
-#include <sys/stat.h>  // 包含 mkdir 函数的声明
-#include <cerrno>      // 包含 errno 的声明
+#include "ImageStorage.h"
+#include <fstream>
+#include <map>
+#include <sstream>
 
+inline std::string jsonString(const std::string& value) {
+    std::string result = "\"";
+    constexpr char digits[] = "0123456789abcdef";
+    for (const unsigned char c : value) {
+        if (c == '"' || c == '\\') { result += '\\'; result += static_cast<char>(c); }
+        else if (c < 32) { result += "\\u00"; result += digits[c >> 4]; result += digits[c & 15]; }
+        else result += static_cast<char>(c);
+    }
+    return result + '"';
+}
 
 class Router {
 public:
-    using HandlerFunc = std::function<HttpResponse(const HttpRequest&)>;
-
-    void addRoute(const std::string& method, const std::string& path, HandlerFunc handler) {
-        routes[method + "|" + path] = handler;
+    Router(Auth& auth, ImageStorage& storage, const Config& config) : auth_(auth), storage_(storage) {
+        for (const auto* name : {"login", "register", "upload"}) {
+            const auto file = config.appRoot / "UI" / (std::string(name) + ".html");
+            std::ifstream input(file, std::ios::binary);
+            if (!input) throw std::runtime_error("无法读取页面：" + file.string());
+            std::ostringstream content; content << input.rdbuf();
+            if (input.bad()) throw std::runtime_error("页面读取失败：" + file.string());
+            pages_.emplace("/" + std::string(name), content.str());
+        }
     }
-
     HttpResponse routeRequest(const HttpRequest& request) {
-        std::string key = request.getMethodString() + "|" + request.getPath();
-        LOG_WARNING("routeRequest: %s", key);
-        if (routes.count(key)) {
-            return routes[key](request);
+        const auto& path = request.getPath();
+        const auto& method = request.getMethodString();
+        if (method == "POST") auth_.requireSameOrigin(request);
+        const bool protectedPath = path == "/upload" || path == "/logout" || path == "/images" || path.rfind("/images/", 0) == 0;
+        const auto user = protectedPath ? auth_.requireUser(request) : std::string{};
+        if (method == "GET") {
+            if (path == "/") return HttpResponse(200, "Hello, World!");
+            const auto page = pages_.find(path);
+            if (page != pages_.end()) {
+                HttpResponse response(200, page->second);
+                response.setHeader("Content-Type", "text/html; charset=utf-8");
+                response.setHeader("Content-Security-Policy", "default-src 'none'; form-action 'self'; style-src 'unsafe-inline'; frame-ancestors 'none'; base-uri 'none'");
+                return response;
+            }
+            if (path == "/images") {
+                std::string data = "[";
+                for (const auto& image : storage_.list(user)) { if (data.size() > 1) data += ','; data += metadata(image); }
+                return json(200, data + ']');
+            }
+            if (path.rfind("/images/", 0) == 0) {
+                const auto image = storage_.read(user, path.substr(8));
+                HttpResponse response(200, image.bytes);
+                response.setHeader("Content-Type", "image/png");
+                response.setHeader("Content-Disposition", "inline; filename=\"" + image.id + ".png\"");
+                return response;
+            }
         }
-        return HttpResponse::makeErrorResponse(404, "Not Found");
+        if (method == "POST") {
+            if (path == "/register") { auth_.registerUser(request); return HttpResponse(201, "注册成功，请前往 /login 登录。"); }
+            if (path == "/login") {
+                const auto token = auth_.login(request);
+                HttpResponse response(303, "登录成功");
+                response.setHeader("Set-Cookie", auth_.cookie(token)); response.setHeader("Location", "/upload"); return response;
+            }
+            if (path == "/logout") {
+                auth_.logout(request);
+                HttpResponse response(200, "已退出登录"); response.setHeader("Set-Cookie", auth_.cookie("")); return response;
+            }
+            if (path == "/upload") return json(201, metadata(storage_.store(user, parseUpload(request))));
+        }
+        throw HttpError(404, "接口不存在");
     }
-
-    void setupDatabaseRoutes(Database& db) {
-         // 注册路由
-        addRoute("POST", "/register", [&db](const HttpRequest& req) {
-            auto params = req.parseFormBody(); 
-            std::string username = params["username"];
-            std::string password = params["password"];
-            // 异步调用数据库注册方法
-            if (db.registerUser(username, password)) {
-                return HttpResponse::makeOkResponse("Register Success!");
-            } else {
-                return HttpResponse::makeErrorResponse(400, "Register Failed!");
-            }
-        });
-
-        // 登录路由
-        addRoute("POST", "/login", [&db](const HttpRequest& req) {
-            auto params = req.parseFormBody();
-            std::string username = params["username"];
-            std::string password = params["password"];
-            // 异步调用数据库登录方法
-            if (db.loginUser(username, password)){
-                return HttpResponse::makeOkResponse("Login Success!");
-            } else {
-                return HttpResponse::makeErrorResponse(400, "Login Failed!");
-            }
-        });
-    }
-
-void setupImageRoutes(Database& db) {
-        // 图片上传路由
-       addRoute("POST", "/upload", [&db](const HttpRequest& req) {
-        // 获取表单字段
-        std::string fileContent = req.getFileContent("file");
-        std::string fileName = req.getFileName("file");  // 使用新方法获取文件名
-        std::string description = req.getFormField("description");
-
-        // 检查并创建目录
-        std::string dirPath = "images/";
-        try {
-            if (mkdir(dirPath.c_str(), 0777) == -1 && errno != EEXIST) {
-                LOG_ERROR("Failed to create directory: %s", dirPath.c_str());
-                return HttpResponse::makeErrorResponse(500, "Internal Server Error: Unable to create directory");
-            }
-        } catch (const std::exception& e) {
-            LOG_ERROR("Exception while creating directory: %s, error: %s", dirPath.c_str(), e.what());
-            return HttpResponse::makeErrorResponse(500, "Internal Server Error: Exception while creating directory");
-        }
-
-        // 保存文件到服务器的某个路径
-        std::string filePath = dirPath + fileName;
-        try {
-            std::ofstream file(filePath, std::ios::binary);
-            if (!file.is_open()) {
-                LOG_ERROR("Failed to open file for writing: %s", filePath.c_str());
-                return HttpResponse::makeErrorResponse(500, "Internal Server Error: Unable to save file");
-            }
-            file.write(fileContent.c_str(), fileContent.size());
-            file.close();
-            LOG_INFO("File saved successfully: %s", filePath.c_str());
-        } catch (const std::exception& e) {
-            LOG_ERROR("Exception while saving file: %s, error: %s", filePath.c_str(), e.what());
-            return HttpResponse::makeErrorResponse(500, "Internal Server Error: Exception while saving file");
-        }
-
-        // 将图片信息存入数据库
-        try {
-            if (!db.storeImage(fileName, filePath, description)) {
-                LOG_ERROR("Failed to store image info in database for: %s", fileName.c_str());
-                return HttpResponse::makeErrorResponse(500, "Internal Server Error: Unable to store image info");
-            }
-        } catch (const std::exception& e) {
-            LOG_ERROR("Exception while storing image info in database for: %s, error: %s", fileName.c_str(), e.what());
-            return HttpResponse::makeErrorResponse(500, "Internal Server Error: Exception while storing image info");
-        }
-
-        LOG_INFO("Image uploaded successfully: %s", fileName.c_str());
-        return HttpResponse::makeOkResponse("Image uploaded successfully");
-    });
-
-
-        // 获取图片列表路由
-        addRoute("GET", "/images", [&db](const HttpRequest& req) {
-            std::vector<std::string> imageList = db.getImageList();
-            std::stringstream ss;
-            ss << "[";
-            for (size_t i = 0; i < imageList.size(); ++i) {
-                ss << "\"" << imageList[i] << "\"";
-                if (i < imageList.size() - 1) {
-                    ss << ", ";
-                }
-            }
-            ss << "]";
-
-            HttpResponse response;
-            response.setStatusCode(200);
-            response.setHeader("Content-Type", "application/json");
-            response.setBody(ss.str());
-            return response;
-        });
-    }
-
 private:
-    std::unordered_map<std::string, HandlerFunc> routes;
+    static std::string metadata(const ImageRecord& image) {
+        return "{\"id\":" + jsonString(image.id) + ",\"name\":" + jsonString(image.filename) +
+               ",\"description\":" + jsonString(image.description) + ",\"bytes\":" + std::to_string(image.byteSize) +
+               ",\"url\":" + jsonString("/images/" + image.id) + '}';
+    }
+    static HttpResponse json(int status, const std::string& data) {
+        HttpResponse response(status, data); response.setHeader("Content-Type", "application/json; charset=utf-8"); return response;
+    }
+    Auth& auth_;
+    ImageStorage& storage_;
+    std::map<std::string, std::string> pages_;
 };

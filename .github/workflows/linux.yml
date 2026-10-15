@@ -1,0 +1,80 @@
+name: Linux 构建与真实请求验收
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        sanitizer: [address, thread]
+    services:
+      mongodb:
+        image: mongo:7.0.16
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --quiet --eval 'quit(db.adminCommand({ping:1}).ok ? 0 : 1)'"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+    env:
+      PKG_CONFIG_PATH: ${{ github.workspace }}/.deps/lib/pkgconfig
+      LD_LIBRARY_PATH: ${{ github.workspace }}/.deps/lib
+      MONGODB_URI: mongodb://127.0.0.1:27017/?serverSelectionTimeoutMS=2000&connectTimeoutMS=2000&socketTimeoutMS=2000&maxPoolSize=8&waitQueueTimeoutMS=2000
+      ASAN_OPTIONS: detect_leaks=1:halt_on_error=1
+      UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
+      TSAN_OPTIONS: halt_on_error=1:exitcode=66
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: 安装编译依赖
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y g++ cmake ninja-build curl pkg-config libsodium-dev libpng-dev libssl-dev libsasl2-dev
+          python3 -m pip install pymongo==4.10.1
+      - name: 缓存固定版本 MongoDB 驱动
+        id: drivers
+        uses: actions/cache@v4
+        with:
+          path: .deps
+          key: ubuntu22-mongo-c1.25.4-cxx3.9.0-${{ hashFiles('scripts/install-mongo-drivers.sh') }}
+      - name: 编译 MongoDB 驱动
+        if: steps.drivers.outputs.cache-hit != 'true'
+        run: bash scripts/install-mongo-drivers.sh "$GITHUB_WORKSPACE/.deps"
+      - name: 记录环境
+        run: |
+          uname -a
+          g++ --version
+          cmake --version
+          pkg-config --modversion libmongoc-1.0 libmongocxx libbsoncxx libsodium libpng
+          docker exec '${{ job.services.mongodb.id }}' mongod --version
+      - name: 配置 TSan 运行环境
+        if: matrix.sanitizer == 'thread'
+        run: sudo sysctl vm.mmap_rnd_bits=28
+      - name: 构建与警告检查
+        run: |
+          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug -DSANITIZER=${{ matrix.sanitizer }}
+          cmake --build build --parallel 2
+      - name: 定向单元测试
+        run: ctest --test-dir build --output-on-failure
+      - name: 复现历史分段正文缺陷
+        run: python3 tests/reproduce_legacy.py
+      - name: 真实 MongoDB、HTTP 与并发测试
+        env:
+          TEST_MONGO_CONTAINER: ${{ job.services.mongodb.id }}
+        run: python3 tests/integration.py --binary build/myserver --output build/integration-report.json
+      - name: 保留验证报告与服务器日志
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: validation-${{ matrix.sanitizer }}
+          path: |
+            build/integration-report.json
+            build/server.log
+            build/Testing/Temporary/LastTest.log
+          if-no-files-found: warn
