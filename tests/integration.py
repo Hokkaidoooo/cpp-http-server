@@ -45,8 +45,9 @@ def multipart(name, data, mime="image/png", description="测试图片"):
 
 
 class Harness:
-    def __init__(self, binary, output):
+    def __init__(self, binary, output, overrides=None):
         self.binary, self.output = binary, output
+        self.output.parent.mkdir(parents=True, exist_ok=True)
         self.temporary = tempfile.TemporaryDirectory(prefix="cpp-http-integration-")
         self.storage = Path(self.temporary.name) / "images"
         with socket.socket() as listener:
@@ -62,6 +63,7 @@ class Harness:
                         TASK_QUEUE_CAPACITY="16", MAX_CONNECTIONS="256", MAX_UPLOAD_BYTES="65536",
                         MAX_IMAGE_PIXELS="65536", READ_TIMEOUT_MS="2000", WRITE_TIMEOUT_MS="2000",
                         PUBLIC_ORIGIN=f"http://127.0.0.1:{self.port}")
+        self.env.update(overrides or {})
         self.log = []
         self.measurements = {}
         self.process = subprocess.Popen([str(binary)], cwd=ROOT, env=self.env, stdout=subprocess.PIPE,
@@ -71,7 +73,9 @@ class Harness:
         deadline = time.monotonic() + 15
         while not any(line.startswith("LISTENING ") for line in self.log):
             if self.process.poll() is not None or time.monotonic() > deadline:
-                raise RuntimeError("服务器未完成真实启动：" + "".join(self.log))
+                details = "".join(self.log)
+                cleanup_errors = self.close()
+                raise RuntimeError("服务器未完成真实启动：" + details + "；清理状态：" + repr(cleanup_errors))
             time.sleep(0.02)
 
     def _read_log(self):
@@ -254,6 +258,8 @@ class Integration(unittest.TestCase):
 
     def test_06_login_logout_and_origin(self):
         username = self.h.register()
+        form = urlencode({"username": username, "password": PASSWORD}).encode()
+        self.assertEqual(self.h.request("POST", "/register", form, content_type="application/x-www-form-urlencoded")[0], 409)
         cookie = self.h.login(username)
         self.assertEqual(self.h.request("GET", "/upload", cookie=cookie)[0], 200)
         wrong = urlencode({"username": username, "password": "another-wrong-password"}).encode()
@@ -266,6 +272,12 @@ class Integration(unittest.TestCase):
         self.assertIn("SameSite=Strict", response[1]["set-cookie"])
         self.assertIn("Max-Age=0", response[1]["set-cookie"])
         self.assertEqual(self.h.request("GET", "/upload", cookie=cookie)[0], 401)
+        original_hash = self.h.database.users.find_one({"username": username})["password_hash"]
+        try:
+            self.h.database.users.update_one({"username": username}, {"$set": {"password_hash": "$argon2id$broken"}})
+            self.assertEqual(self.h.request("POST", "/login", form, content_type="application/x-www-form-urlencoded")[0], 500)
+        finally:
+            self.h.database.users.update_one({"username": username}, {"$set": {"password_hash": original_hash}})
 
     def test_07_upload_read_and_validation(self):
         username = self.h.register()
@@ -301,6 +313,25 @@ class Integration(unittest.TestCase):
         self.assertFalse(list(self.h.storage.rglob("*.part")))
         owner_dir = self.h.storage / hashlib.blake2b(username.encode(), digest_size=32).hexdigest()
         self.assertEqual(len(list(owner_dir.glob("*.asset"))), 1)
+        owner_dir.chmod(0o500)
+        try:
+            data, kind = multipart("write-failure.png", png)
+            self.assertEqual(self.h.request("POST", "/upload", data, cookie, kind)[0], 500)
+        finally:
+            owner_dir.chmod(0o700)
+        self.assertFalse(list(self.h.storage.rglob("*.part")))
+        marker = Path(self.h.temporary.name) / "outside-marker"
+        marker.write_bytes(b"protected test fixture")
+        malicious_id = hashlib.blake2b(b"symlink.png", digest_size=32).hexdigest()
+        link = owner_dir / (malicious_id + ".asset")
+        link.symlink_to(marker)
+        try:
+            data, kind = multipart("symlink.png", png)
+            self.assertEqual(self.h.request("POST", "/upload", data, cookie, kind)[0], 409)
+            self.assertEqual(self.h.request("GET", "/images/" + malicious_id, cookie=cookie)[0], 500)
+            self.assertEqual(marker.read_bytes(), b"protected test fixture")
+        finally:
+            link.unlink()
 
     def test_08_concurrent_same_name_does_not_overwrite(self):
         cookie = self.h.login(self.h.register())
@@ -372,9 +403,14 @@ class Integration(unittest.TestCase):
         if not container:
             self.skipTest("未提供隔离测试 MongoDB 容器，未进行运行中停库验收")
         self.assertRegex(container, r"^[a-f0-9]{12,64}$")
+        short = Harness(self.h.binary, self.h.output.parent / "timeout" / "report.json",
+                        overrides={"PROCESSING_TIMEOUT_MS": "100"})
         try:
             subprocess.run(["docker", "stop", "--time", "5", container], check=True, capture_output=True)
             body = urlencode({"username": "outage_test", "password": PASSWORD}).encode()
+            self.assertEqual(short.request("POST", "/login", body, content_type="application/x-www-form-urlencoded")[0], 503)
+            for _ in range(40):
+                self.assertEqual(short.request("GET", "/")[::2], (200, b"Hello, World!"))
             self.assertEqual(self.h.request("POST", "/login", body, content_type="application/x-www-form-urlencoded")[0], 500)
             self.assertEqual(self.h.request("GET", "/")[0], 200)
         finally:
@@ -388,6 +424,10 @@ class Integration(unittest.TestCase):
                     if time.monotonic() >= deadline:
                         raise
                     time.sleep(0.2)
+            short_errors = short.close()
+            self.h.measurements["timeout_server"] = short.measurements
+            self.assertFalse(short_errors, short_errors)
+            self.assertGreaterEqual(short.measurements["server"]["stale_completions"], 1)
 
 
 def main():

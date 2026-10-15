@@ -76,5 +76,6 @@ jobs:
           path: |
             build/integration-report.json
             build/server.log
+            build/timeout/server.log
             build/Testing/Temporary/LastTest.log
           if-no-files-found: warn

@@ -46,7 +46,10 @@ public:
         const auto credentials = readCredentials(request);
         const auto hash = users_.passwordHash(credentials.first);
         if (!hash) throw HttpError(401, "用户名或密码错误");
-        if (hash->rfind("$argon2id$", 0) != 0) throw std::runtime_error("密码记录不是受支持的 Argon2id 格式，需要显式迁移");
+        if (hash->rfind("$argon2id$", 0) != 0 || hash->find('\0') != std::string::npos ||
+            crypto_pwhash_str_needs_rehash(hash->c_str(), crypto_pwhash_OPSLIMIT_INTERACTIVE,
+                                         crypto_pwhash_MEMLIMIT_INTERACTIVE) < 0)
+            throw std::runtime_error("密码记录不是有效的 Argon2id 格式，需要显式迁移或修复");
         if (crypto_pwhash_str_verify(hash->c_str(), credentials.second.data(), credentials.second.size()) != 0)
             throw HttpError(401, "用户名或密码错误");
         const auto token = randomToken();

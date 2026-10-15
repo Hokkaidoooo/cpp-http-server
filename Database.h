@@ -2,6 +2,9 @@
 #include "Auth.h"
 #include <bsoncxx/builder/basic/document.hpp>
 #include <bsoncxx/builder/basic/kvp.hpp>
+#include <mongocxx/client.hpp>
+#include <mongocxx/collection.hpp>
+#include <mongocxx/database.hpp>
 #include <mongocxx/exception/operation_exception.hpp>
 #include <mongocxx/options/index.hpp>
 #include <mongocxx/pool.hpp>
