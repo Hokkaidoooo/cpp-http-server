@@ -2,6 +2,8 @@
 
 # C++ HTTP 服务器
 
+**简体中文** · [English](README.en.md) · [Español](README.es.md) · [日本語](README.ja.md)
+
 Linux C++17 HTTP 服务：epoll 负责连接和收发，有界线程池处理完整请求，MongoDB 保存 Argon2id 密码哈希，图片通过单个存储模块校验并原子发布。
 
 支持注册、登录、退出和个人 PNG 图片上传、列表、读取。协议范围为 HTTP/1.1 的 GET、POST，每个连接处理一个请求后关闭。
